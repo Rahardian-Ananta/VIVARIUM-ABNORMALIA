@@ -20,11 +20,26 @@ jobs:
       - name: Setup Web Directory
         run: mkdir -v -p build/web
 
+      - name: Diagnostics & Templates
+        run: |
+          echo "=== Godot Version ==="
+          godot --version
+          echo "=== Templates in /root ==="
+          ls -la /root/.local/share/godot/export_templates/ 2>/dev/null || true
+          echo "=== Templates in HOME ==="
+          ls -la "$HOME/.local/share/godot/export_templates/" 2>/dev/null || true
+
       - name: Import Project Assets
-        run: godot --headless --editor --quit || true
+        run: godot -v --headless --editor --quit || true
 
       - name: Export WebAssembly / HTML5
-        run: godot -v --headless --export-release "Web" build/web/index.html
+        run: |
+          godot -v --headless --export-release "Web" build/web/index.html 2>&1 | tee export_web.log
+          if [ ! -f build/web/index.html ]; then
+            ERR_MSG=$(tail -n 25 export_web.log | tr '\n' ' ')
+            echo "::error::Web export failed: $ERR_MSG"
+            exit 1
+          fi
 
       - name: Upload Web Build Artifact
         uses: actions/upload-artifact@v4
@@ -45,9 +60,6 @@ jobs:
       - name: Setup Android Directory
         run: mkdir -v -p build/android
 
-      - name: Import Project Assets
-        run: godot --headless --editor --quit || true
-
       - name: Setup Android SDK and Keystore
         run: |
           mkdir -p ~/.android
@@ -58,8 +70,17 @@ jobs:
           echo "Using Android SDK at: $SDK_PATH"
           printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/debug_keystore = "%s"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$SDK_PATH" "$HOME/.android/debug.keystore" > ~/.config/godot/editor_settings-4.tres
 
+      - name: Import Project Assets
+        run: godot -v --headless --editor --quit || true
+
       - name: Export Android APK
-        run: godot -v --headless --export-debug "Android" build/android/VivariumAbnormalia.apk
+        run: |
+          godot -v --headless --export-debug "Android" build/android/VivariumAbnormalia.apk 2>&1 | tee export_android.log
+          if [ ! -f build/android/VivariumAbnormalia.apk ]; then
+            ERR_MSG=$(tail -n 25 export_android.log | tr '\n' ' ')
+            echo "::error::Android export failed: $ERR_MSG"
+            exit 1
+          fi
 
       - name: Upload Android APK Artifact
         uses: actions/upload-artifact@v4
