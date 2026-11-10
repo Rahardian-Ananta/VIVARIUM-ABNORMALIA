@@ -20,13 +20,11 @@ jobs:
       - name: Setup Web Directory
         run: mkdir -v -p build/web
 
-      - name: Import Assets (Headless Editor Run)
-        run: |
-          godot -v --headless --editor --quit || true
+      - name: Import Project Assets
+        run: godot --headless --editor --quit || true
 
       - name: Export WebAssembly / HTML5
-        run: |
-          godot -v --headless --export-release "Web" build/web/index.html
+        run: godot -v --headless --export-release "Web" build/web/index.html
 
       - name: Upload Web Build Artifact
         uses: actions/upload-artifact@v4
@@ -47,38 +45,21 @@ jobs:
       - name: Setup Android Directory
         run: mkdir -v -p build/android
 
-      - name: Import Assets (Headless Editor Run)
-        run: |
-          godot -v --headless --editor --quit || true
+      - name: Import Project Assets
+        run: godot --headless --editor --quit || true
 
       - name: Setup Android SDK and Keystore
         run: |
           mkdir -p ~/.android
           keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
           cp ~/.android/debug.keystore ./debug.keystore
-          
-          # Configure Godot Editor Settings for Android SDK
-          GODOT_SETTINGS_DIR=~/.config/godot
-          mkdir -p "$GODOT_SETTINGS_DIR"
-          
-          # Detect Android SDK path
+          mkdir -p ~/.config/godot
           SDK_PATH="${ANDROID_HOME:-/usr/lib/android-sdk}"
           echo "Using Android SDK at: $SDK_PATH"
-          
-          cat <<EOF > "$GODOT_SETTINGS_DIR/editor_settings-4.tres"
-[gd_resource type="EditorSettings" format=3]
-
-[resource]
-export/android/android_sdk_path = "$SDK_PATH"
-export/android/debug_keystore = "$HOME/.android/debug.keystore"
-export/android/debug_keystore_user = "androiddebugkey"
-export/android/debug_keystore_pass = "android"
-export/android/force_system_user = false
-EOF
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/debug_keystore = "%s"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$SDK_PATH" "$HOME/.android/debug.keystore" > ~/.config/godot/editor_settings-4.tres
 
       - name: Export Android APK
-        run: |
-          godot -v --headless --export-debug "Android" build/android/VivariumAbnormalia.apk
+        run: godot -v --headless --export-debug "Android" build/android/VivariumAbnormalia.apk
 
       - name: Upload Android APK Artifact
         uses: actions/upload-artifact@v4
