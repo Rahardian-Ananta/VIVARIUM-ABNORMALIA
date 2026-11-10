@@ -1,0 +1,59 @@
+name: Build & Export (Web & Android)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  export-web:
+    name: Export Web (HTML5)
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Web Directory
+        run: mkdir -v -p build/web
+
+      - name: Export WebAssembly / HTML5
+        run: godot -v --headless --export-release "Web" build/web/index.html
+
+      - name: Upload Web Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vivarium-Abnormalia-Web
+          path: build/web/
+          retention-days: 14
+
+  export-android:
+    name: Export Android (APK)
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Android Directory
+        run: mkdir -v -p build/android
+
+      - name: Generate Debug Keystore
+        run: |
+          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
+          mkdir -p ~/.android
+          cp debug.keystore ~/.android/debug.keystore
+
+      - name: Export Android APK
+        run: godot -v --headless --export-debug "Android" build/android/VivariumAbnormalia.apk
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vivarium-Abnormalia-APK
+          path: build/android/VivariumAbnormalia.apk
+          retention-days: 14

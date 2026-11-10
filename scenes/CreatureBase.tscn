@@ -1,0 +1,40 @@
+[gd_scene load_steps=5 format=3 uid="uid://cy81p2k2m888a"]
+
+[ext_resource type="Script" path="res://scripts/creatures/CreatureEntity.gd" id="1_entity"]
+[ext_resource type="Script" path="res://scripts/creatures/ProceduralAnatomy.gd" id="2_anatomy"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.45
+height = 1.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dirt"]
+albedo_color = Color(0.38, 0.28, 0.16, 1)
+
+[node name="CreatureBase" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 7
+script = ExtResource("1_entity")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="ProceduralAnatomy" type="Node3D" parent="."]
+script = ExtResource("2_anatomy")
+
+[node name="DirtParticles" type="CPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.3, -0.7)
+emitting = false
+amount = 16
+lifetime = 0.4
+mesh = SubResource("CapsuleShape3D_body")
+emission_shape = 1
+emission_sphere_radius = 0.2
+direction = Vector3(0, 1, 1)
+spread = 35.0
+gravity = Vector3(0, -9.8, 0)
+initial_velocity_min = 1.0
+initial_velocity_max = 2.5
+scale_amount_min = 0.04
+scale_amount_max = 0.08
+

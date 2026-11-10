@@ -1,0 +1,21 @@
+# Godot 4.x gitignore
+.godot/
+.import/
+export_credentials.cfg
+
+# Imported translations
+*.translation
+
+# Mono/C# (if any)
+.mono/
+data_*/
+mono_crash.*.json
+
+# Builds & temporary files
+build/
+*.tmp
+*.log
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
