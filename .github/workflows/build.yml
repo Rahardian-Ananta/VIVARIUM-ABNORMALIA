@@ -20,14 +20,16 @@ jobs:
       - name: Setup Web Directory
         run: mkdir -v -p build/web
 
-      - name: Diagnostics & Templates
+      - name: Setup Export Templates
         run: |
-          echo "=== Godot Version ==="
-          godot --version
-          echo "=== Templates in /root ==="
-          ls -la /root/.local/share/godot/export_templates/ 2>/dev/null || true
-          echo "=== Templates in HOME ==="
-          ls -la "$HOME/.local/share/godot/export_templates/" 2>/dev/null || true
+          mkdir -p "$HOME/.local/share/godot"
+          if [ -d "/root/.local/share/godot/export_templates" ]; then
+            cp -r /root/.local/share/godot/export_templates "$HOME/.local/share/godot/"
+          elif [ -d "/root/.local/share/godot/templates" ]; then
+            cp -r /root/.local/share/godot/templates "$HOME/.local/share/godot/export_templates"
+          fi
+          echo "Templates in $HOME:"
+          ls -la "$HOME/.local/share/godot/export_templates/" || true
 
       - name: Import Project Assets
         run: godot -v --headless --editor --quit || true
@@ -60,15 +62,33 @@ jobs:
       - name: Setup Android Directory
         run: mkdir -v -p build/android
 
-      - name: Setup Android SDK and Keystore
+      - name: Setup Export Templates
+        run: |
+          mkdir -p "$HOME/.local/share/godot"
+          if [ -d "/root/.local/share/godot/export_templates" ]; then
+            cp -r /root/.local/share/godot/export_templates "$HOME/.local/share/godot/"
+          elif [ -d "/root/.local/share/godot/templates" ]; then
+            cp -r /root/.local/share/godot/templates "$HOME/.local/share/godot/export_templates"
+          fi
+
+      - name: Setup Android SDK, Java and Keystore
         run: |
           mkdir -p ~/.android
           keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
           cp ~/.android/debug.keystore ./debug.keystore
-          mkdir -p ~/.config/godot
+          
+          # Detect Java SDK
+          JAVA_BIN=$(which javac || which java)
+          JAVA_PATH=$(dirname $(dirname $(readlink -f "$JAVA_BIN")))
+          echo "Using Java at: $JAVA_PATH"
+          
+          # Detect Android SDK path
           SDK_PATH="${ANDROID_HOME:-/usr/lib/android-sdk}"
           echo "Using Android SDK at: $SDK_PATH"
-          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/debug_keystore = "%s"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$SDK_PATH" "$HOME/.android/debug.keystore" > ~/.config/godot/editor_settings-4.tres
+          
+          mkdir -p ~/.config/godot
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "%s"\nexport/android/debug_keystore = "%s"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$JAVA_PATH" "$SDK_PATH" "$HOME/.android/debug.keystore" > ~/.config/godot/editor_settings-4.tres
+          cat ~/.config/godot/editor_settings-4.tres
 
       - name: Import Project Assets
         run: godot -v --headless --editor --quit || true
