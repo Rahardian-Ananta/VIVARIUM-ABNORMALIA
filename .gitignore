@@ -19,3 +19,4 @@ build/
 .idea/
 Thumbs.db
 .DS_Store
+check_ci.py
