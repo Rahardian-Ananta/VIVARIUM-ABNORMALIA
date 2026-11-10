@@ -25,21 +25,25 @@ jobs:
           mkdir -p "$HOME/.local/share/godot"
           if [ -d "/root/.local/share/godot/export_templates" ]; then
             cp -r /root/.local/share/godot/export_templates "$HOME/.local/share/godot/"
-          elif [ -d "/root/.local/share/godot/templates" ]; then
-            cp -r /root/.local/share/godot/templates "$HOME/.local/share/godot/export_templates"
           fi
-          echo "Templates in $HOME:"
-          ls -la "$HOME/.local/share/godot/export_templates/" || true
+          echo "### Templates Available" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ls -la "$HOME/.local/share/godot/export_templates/" >> $GITHUB_STEP_SUMMARY || true
+          ls -la "$HOME/.local/share/godot/export_templates/4.3.stable/" >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Import Project Assets
         run: godot -v --headless --editor --quit || true
 
       - name: Export WebAssembly / HTML5
         run: |
-          godot -v --headless --export-release "Web" build/web/index.html 2>&1 | tee export_web.log
+          godot -v --headless --export-release "Web" build/web/index.html > export_web.log 2>&1 || true
+          echo "### Web Export Log" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat export_web.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
           if [ ! -f build/web/index.html ]; then
-            ERR_MSG=$(tail -n 25 export_web.log | tr '\n' ' ')
-            echo "::error::Web export failed: $ERR_MSG"
+            echo "::error::Web export failed, see summary!"
             exit 1
           fi
 
@@ -67,8 +71,6 @@ jobs:
           mkdir -p "$HOME/.local/share/godot"
           if [ -d "/root/.local/share/godot/export_templates" ]; then
             cp -r /root/.local/share/godot/export_templates "$HOME/.local/share/godot/"
-          elif [ -d "/root/.local/share/godot/templates" ]; then
-            cp -r /root/.local/share/godot/templates "$HOME/.local/share/godot/export_templates"
           fi
 
       - name: Setup Android SDK, Java and Keystore
@@ -77,28 +79,25 @@ jobs:
           keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
           cp ~/.android/debug.keystore ./debug.keystore
           
-          # Detect Java SDK
           JAVA_BIN=$(which javac || which java)
           JAVA_PATH=$(dirname $(dirname $(readlink -f "$JAVA_BIN")))
-          echo "Using Java at: $JAVA_PATH"
-          
-          # Detect Android SDK path
           SDK_PATH="${ANDROID_HOME:-/usr/lib/android-sdk}"
-          echo "Using Android SDK at: $SDK_PATH"
           
           mkdir -p ~/.config/godot
           printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "%s"\nexport/android/debug_keystore = "%s"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$JAVA_PATH" "$SDK_PATH" "$HOME/.android/debug.keystore" > ~/.config/godot/editor_settings-4.tres
-          cat ~/.config/godot/editor_settings-4.tres
 
       - name: Import Project Assets
         run: godot -v --headless --editor --quit || true
 
       - name: Export Android APK
         run: |
-          godot -v --headless --export-debug "Android" build/android/VivariumAbnormalia.apk 2>&1 | tee export_android.log
+          godot -v --headless --export-debug "Android" build/android/VivariumAbnormalia.apk > export_android.log 2>&1 || true
+          echo "### Android Export Log" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat export_android.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
           if [ ! -f build/android/VivariumAbnormalia.apk ]; then
-            ERR_MSG=$(tail -n 25 export_android.log | tr '\n' ' ')
-            echo "::error::Android export failed: $ERR_MSG"
+            echo "::error::Android export failed, see summary!"
             exit 1
           fi
 
