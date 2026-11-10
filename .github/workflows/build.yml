@@ -20,17 +20,21 @@ jobs:
       - name: Setup Web Directory
         run: mkdir -v -p build/web
 
-      - name: Setup Export Templates
+      - name: Find & Setup Export Templates
         run: |
-          mkdir -p "$HOME/.local/share/godot"
-          if [ -d "/root/.local/share/godot/export_templates" ]; then
-            cp -r /root/.local/share/godot/export_templates "$HOME/.local/share/godot/"
+          echo "Finding templates in container..."
+          TEMPL_DIR=$(find / -type d -name "4.3.stable" 2>/dev/null | head -n 1)
+          echo "::notice::Template dir found at: $TEMPL_DIR"
+          
+          TARGET_DIR="$HOME/.local/share/godot/export_templates/4.3.stable"
+          mkdir -p "$TARGET_DIR"
+          
+          if [ -n "$TEMPL_DIR" ] && [ -d "$TEMPL_DIR" ]; then
+            cp -r "$TEMPL_DIR"/* "$TARGET_DIR/" || true
           fi
-          echo "### Templates Available" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          ls -la "$HOME/.local/share/godot/export_templates/" >> $GITHUB_STEP_SUMMARY || true
-          ls -la "$HOME/.local/share/godot/export_templates/4.3.stable/" >> $GITHUB_STEP_SUMMARY || true
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          FILES=$(ls -la "$TARGET_DIR" | tr '\n' ' ')
+          echo "::notice::Target dir contents: $FILES"
 
       - name: Import Project Assets
         run: godot -v --headless --editor --quit || true
@@ -38,12 +42,10 @@ jobs:
       - name: Export WebAssembly / HTML5
         run: |
           godot -v --headless --export-release "Web" build/web/index.html > export_web.log 2>&1 || true
-          echo "### Web Export Log" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat export_web.log >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
           if [ ! -f build/web/index.html ]; then
-            echo "::error::Web export failed, see summary!"
+            ERR_MSG=$(cat export_web.log | grep -E "ERROR|FATAL|SCRIPT ERROR" | tr '\n' ' ')
+            ALL_MSG=$(tail -n 15 export_web.log | tr '\n' ' ')
+            echo "::error::Web export errors: $ERR_MSG | Tail: $ALL_MSG"
             exit 1
           fi
 
@@ -66,11 +68,13 @@ jobs:
       - name: Setup Android Directory
         run: mkdir -v -p build/android
 
-      - name: Setup Export Templates
+      - name: Find & Setup Export Templates
         run: |
-          mkdir -p "$HOME/.local/share/godot"
-          if [ -d "/root/.local/share/godot/export_templates" ]; then
-            cp -r /root/.local/share/godot/export_templates "$HOME/.local/share/godot/"
+          TEMPL_DIR=$(find / -type d -name "4.3.stable" 2>/dev/null | head -n 1)
+          TARGET_DIR="$HOME/.local/share/godot/export_templates/4.3.stable"
+          mkdir -p "$TARGET_DIR"
+          if [ -n "$TEMPL_DIR" ] && [ -d "$TEMPL_DIR" ]; then
+            cp -r "$TEMPL_DIR"/* "$TARGET_DIR/" || true
           fi
 
       - name: Setup Android SDK, Java and Keystore
@@ -92,12 +96,10 @@ jobs:
       - name: Export Android APK
         run: |
           godot -v --headless --export-debug "Android" build/android/VivariumAbnormalia.apk > export_android.log 2>&1 || true
-          echo "### Android Export Log" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat export_android.log >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
           if [ ! -f build/android/VivariumAbnormalia.apk ]; then
-            echo "::error::Android export failed, see summary!"
+            ERR_MSG=$(cat export_android.log | grep -E "ERROR|FATAL|SCRIPT ERROR" | tr '\n' ' ')
+            ALL_MSG=$(tail -n 15 export_android.log | tr '\n' ' ')
+            echo "::error::Android export errors: $ERR_MSG | Tail: $ALL_MSG"
             exit 1
           fi
 
