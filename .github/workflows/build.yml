@@ -20,32 +20,24 @@ jobs:
       - name: Setup Web Directory
         run: mkdir -v -p build/web
 
-      - name: Find & Setup Export Templates
+      - name: Setup Export Templates
         run: |
-          echo "Finding templates in container..."
           TEMPL_DIR=$(find / -type d -name "4.3.stable" 2>/dev/null | head -n 1)
-          echo "::notice::Template dir found at: $TEMPL_DIR"
-          
           TARGET_DIR="$HOME/.local/share/godot/export_templates/4.3.stable"
           mkdir -p "$TARGET_DIR"
-          
           if [ -n "$TEMPL_DIR" ] && [ -d "$TEMPL_DIR" ]; then
             cp -r "$TEMPL_DIR"/* "$TARGET_DIR/" || true
           fi
-          
-          FILES=$(ls -la "$TARGET_DIR" | tr '\n' ' ')
-          echo "::notice::Target dir contents: $FILES"
 
       - name: Import Project Assets
         run: godot -v --headless --editor --quit || true
 
       - name: Export WebAssembly / HTML5
         run: |
-          godot -v --headless --export-release "Web" build/web/index.html > export_web.log 2>&1 || true
+          godot -v --headless --export-release "Web" build/web/index.html 2>&1 | tee export_web.log
           if [ ! -f build/web/index.html ]; then
-            ERR_MSG=$(cat export_web.log | grep -E "ERROR|FATAL|SCRIPT ERROR" | tr '\n' ' ')
-            ALL_MSG=$(tail -n 15 export_web.log | tr '\n' ' ')
-            echo "::error::Web export errors: $ERR_MSG | Tail: $ALL_MSG"
+            echo "::error::Web export failed! Log:"
+            cat export_web.log
             exit 1
           fi
 
@@ -68,7 +60,7 @@ jobs:
       - name: Setup Android Directory
         run: mkdir -v -p build/android
 
-      - name: Find & Setup Export Templates
+      - name: Setup Export Templates
         run: |
           TEMPL_DIR=$(find / -type d -name "4.3.stable" 2>/dev/null | head -n 1)
           TARGET_DIR="$HOME/.local/share/godot/export_templates/4.3.stable"
@@ -79,27 +71,25 @@ jobs:
 
       - name: Setup Android SDK, Java and Keystore
         run: |
-          mkdir -p ~/.android
-          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
-          cp ~/.android/debug.keystore ./debug.keystore
+          mkdir -p "$HOME/.android"
+          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore "$HOME/.android/debug.keystore" -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
           
           JAVA_BIN=$(which javac || which java)
           JAVA_PATH=$(dirname $(dirname $(readlink -f "$JAVA_BIN")))
           SDK_PATH="${ANDROID_HOME:-/usr/lib/android-sdk}"
           
-          mkdir -p ~/.config/godot
-          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "%s"\nexport/android/debug_keystore = "%s"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$JAVA_PATH" "$SDK_PATH" "$HOME/.android/debug.keystore" > ~/.config/godot/editor_settings-4.tres
+          mkdir -p "$HOME/.config/godot"
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "%s"\nexport/android/debug_keystore = "%s"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$JAVA_PATH" "$SDK_PATH" "$HOME/.android/debug.keystore" > "$HOME/.config/godot/editor_settings-4.tres"
 
       - name: Import Project Assets
         run: godot -v --headless --editor --quit || true
 
       - name: Export Android APK
         run: |
-          godot -v --headless --export-debug "Android" build/android/VivariumAbnormalia.apk > export_android.log 2>&1 || true
+          godot -v --headless --export-debug "Android" build/android/VivariumAbnormalia.apk 2>&1 | tee export_android.log
           if [ ! -f build/android/VivariumAbnormalia.apk ]; then
-            ERR_MSG=$(cat export_android.log | grep -E "ERROR|FATAL|SCRIPT ERROR" | tr '\n' ' ')
-            ALL_MSG=$(tail -n 15 export_android.log | tr '\n' ' ')
-            echo "::error::Android export errors: $ERR_MSG | Tail: $ALL_MSG"
+            echo "::error::Android export failed! Log:"
+            cat export_android.log
             exit 1
           fi
 

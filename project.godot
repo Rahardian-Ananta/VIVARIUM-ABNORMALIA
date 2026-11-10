@@ -6,133 +6,47 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=4
-
-_global_script_classes=[ {
-"base": "Control",
-"class": "AcquisitionDrawer",
-"language": "GDScript",
-"path": "res://scripts/ui/AcquisitionDrawer.gd"
-}, {
-"base": "Node",
-"class": "AudioSynthesizer",
-"language": "GDScript",
-"path": "res://scripts/core/AudioSynthesizer.gd"
-}, {
-"base": "Node",
-"class": "ClimateController",
-"language": "GDScript",
-"path": "res://scripts/ecosystem/ClimateController.gd"
-}, {
-"base": "CharacterBody3D",
-"class": "CreatureEntity",
-"language": "GDScript",
-"path": "res://scripts/creatures/CreatureEntity.gd"
-}, {
-"base": "Node",
-"class": "GameManagerClass",
-"language": "GDScript",
-"path": "res://scripts/core/GameManager.gd"
-}, {
-"base": "Resource",
-"class": "GenomeData",
-"language": "GDScript",
-"path": "res://scripts/creatures/GenomeData.gd"
-}, {
-"base": "Node3D",
-"class": "InputRouter",
-"language": "GDScript",
-"path": "res://scripts/core/InputRouter.gd"
-}, {
-"base": "Node3D",
-"class": "MainVivariumController",
-"language": "GDScript",
-"path": "res://scripts/core/MainVivariumController.gd"
-}, {
-"base": "CanvasLayer",
-"class": "NaturalistHUD",
-"language": "GDScript",
-"path": "res://scripts/ui/NaturalistHUD.gd"
-}, {
-"base": "Resource",
-"class": "OrganData",
-"language": "GDScript",
-"path": "res://scripts/creatures/OrganData.gd"
-}, {
-"base": "Node3D",
-"class": "OverseerToolController",
-"language": "GDScript",
-"path": "res://scripts/tools/OverseerToolController.gd"
-}, {
-"base": "Node3D",
-"class": "ProceduralAnatomy",
-"language": "GDScript",
-"path": "res://scripts/creatures/ProceduralAnatomy.gd"
-}, {
-"base": "Node3D",
-"class": "ProceduralLegIK",
-"language": "GDScript",
-"path": "res://scripts/creatures/ProceduralLegIK.gd"
-}, {
-"base": "RigidBody3D",
-"class": "SeveredOrganChunk",
-"language": "GDScript",
-"path": "res://scripts/creatures/SeveredOrganChunk.gd"
-}, {
-"base": "Control",
-"class": "SpecimenInspectorCard",
-"language": "GDScript",
-"path": "res://scripts/ui/SpecimenInspectorCard.gd"
-}, {
-"base": "Area3D",
-"class": "SporeCloud",
-"language": "GDScript",
-"path": "res://scripts/ecosystem/SporeCloud.gd"
-}, {
-"base": "Node3D",
-"class": "SurgicalTweezers",
-"language": "GDScript",
-"path": "res://scripts/tools/SurgicalTweezers.gd"
-}, {
-"base": "Node3D",
-"class": "TerrariumBuilder",
-"language": "GDScript",
-"path": "res://scripts/ecosystem/TerrariumBuilder.gd"
-} ]
-_global_script_class_icons={
-"AcquisitionDrawer": "",
-"AudioSynthesizer": "",
-"ClimateController": "",
-"CreatureEntity": "",
-"GameManagerClass": "",
-"GenomeData": "",
-"InputRouter": "",
-"MainVivariumController": "",
-"NaturalistHUD": "",
-"OrganData": "",
-"OverseerToolController": "",
-"ProceduralAnatomy": "",
-"ProceduralLegIK": "",
-"SeveredOrganChunk": "",
-"SpecimenInspectorCard": "",
-"SporeCloud": "",
-"SurgicalTweezers": "",
-"TerrariumBuilder": ""
-}
+config_version=5
 
 [application]
 
-config/name="Game- Godot"
+config/name="Vivarium: Abnormalia"
+config/description="3D Stylized Comic-Diorama Parasitic Mutation Sandbox"
+run/main_scene="res://scenes/MainVivarium.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.png"
 
-[gui]
+[autoload]
 
-common/drop_mouse_on_gui_input_disabled=true
+GameManager="*res://scripts/core/GameManager.gd"
 
-[physics]
+[display]
 
-common/enable_pause_aware_picking=true
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/resizable=true
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+pointing/emulate_mouse_from_touch=true
+
+[layer_names]
+
+3d_physics/layer_1="Terrarium Terrain"
+3d_physics/layer_2="Creature Hulls"
+3d_physics/layer_3="Severed Organs Chunks"
+3d_physics/layer_4="Pellets Baits Spores"
+3d_physics/layer_5="Glass Raycast Planes"
 
 [rendering]
 
-environment/default_environment="res://default_env.tres"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method.web="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+textures/vram_compression/import_s3tc_bptc=true
+environment/defaults/default_clear_color=Color(0.0862745, 0.0705882, 0.054902, 1)
